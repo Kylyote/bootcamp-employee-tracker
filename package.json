@@ -1,0 +1,17 @@
+{
+  "name": "bootcamp-employee-tracker",
+  "description": "Simple CLI interface to access values and change them in MySQL without having to know SQL.",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "devDependencies": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "inquirer": "^8.2.4",
+    "mysql2": "^3.6.0"
+  }
+}
