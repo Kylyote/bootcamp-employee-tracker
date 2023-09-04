@@ -54,7 +54,7 @@ function startMenu(){
 
 // View tables functions. These functions will be used to view tables
 function viewDepartment() {
-  db.query('', function(err, results) { 
+  db.query('SELECT * FROM departments', function(err, results) { 
     if (err) console.log(err);
     console.table(results);
     startMenu();
@@ -62,7 +62,7 @@ function viewDepartment() {
   })
 }
 function viewRoles() {
-  db.query('', function(err, results) { 
+  db.query('SELECT * FROM roles', function(err, results) { 
     if (err) console.log(err);
     console.table(results);
     startMenu();
@@ -70,7 +70,7 @@ function viewRoles() {
   })
 }
 function viewEmployees() {
-  db.query('', function(err, results) { 
+  db.query('SELECT * FROM employees', function(err, results) { 
     if (err) console.log(err);
     console.table(results);
     startMenu();
@@ -88,9 +88,17 @@ function quitMenu(){
 function addDepart() {
   inquirer.prompt([
     {
-
+      type: 'input',
+      message: 'What is the name of the new department?',
+      name: "departName"
     }
-  ]);
+  ])
+  .then((response) => {
+    db.query('INSERT INTO departments VALUES ?', response.departName, (err, result) => {
+      if(err) console.log(err);
+      console.log('Department Result', result);
+    });
+  });
   viewDepartment();
   startMenu();
 }
@@ -99,6 +107,7 @@ function addDepart() {
 function addRole (){
   inquirer.prompt([
     {
+      type: 'input',
 
     }
   ]);
@@ -114,3 +123,4 @@ function addEmployee(){
     }
   ]);
 }
+startMenu();
