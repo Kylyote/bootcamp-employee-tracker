@@ -26,28 +26,29 @@ function startMenu(){
   .then((response) => {
     if (response.userMC === 'View All Departments'){
       viewDepartment();
-      return;
     } else if (response.userMC === 'View All Roles'){
       viewRoles();
-      return;
+
     } else if(response.userMC === 'View All Employees'){
       viewEmployees();
-      return;
+
     } else if (response.userMC === 'Add a Department'){
       addDepart();
-      return;
+
     } else if (response.userMC === 'Add a Role'){
       addRole();
-      return;
+
     } else if (response.userMC === 'Add an Employee') {
       addEmployee();
-      return;
+
     } else if (response.userMC === 'Update an Employee Role') {
       updateEmployee();
-      return;
+
     } else {
-      quitMenu();
-      return;
+      // ends connection and returns to terminal screen.
+      console.log()
+      db.end();
+
     }
   })
 }
@@ -70,18 +71,12 @@ function viewRoles() {
   })
 }
 function viewEmployees() {
-  db.query('SELECT * FROM employees', function(err, results) { 
+  db.query("SELECT employees.id, employees.first_name, employees.last_name, roles.title, departments.department_name, roles.salary, CONCAT(manager.first_name, ' ', manager.last_name) AS manager FROM employees JOIN roles ON employees.title = roles.id JOIN departments ON roles.department = departments.id LEFT JOIN employees AS manager ON employees.manager = manager.id;", function(err, results) { 
     if (err) console.log(err);
     console.table(results);
     startMenu();
     return;
   })
-}
-
-// function to quit mySQL and return to the main terminal
-function quitMenu(){
-  db.end();
-  return;
 }
 
 // Function that will take user input and add a new department, after which it will call viewDepartment() so the user can see their addition then return to the startMenu().
@@ -100,19 +95,48 @@ function addDepart() {
     });
   });
   viewDepartment();
-  startMenu();
 }
 
 // Function that will take user input and add a new role to the roles table, then it will call viewRoles() to show the changes, then go back to the startMenu().
 function addRole (){
-  inquirer.prompt([
-    {
-      type: 'input',
+  db.query('SELECT departments.id, departments.department_name FROM departments', (err, res) => {
+    if (err) throw err;
+    let departList = [];
+    // Store departments from query into an array
+    res.forEach((department) => {
+      departList.push({
+        name: department.department_name,
+        value: department.id,
+      });
+    });
+      // Ask the user some questions.
+    inquirer.prompt([
+      {
+        type: 'input',
+        message: 'What is the role you want to add?',
+        name: 'roleName'
+      },
+      {
+        type: 'input',
+        message: 'What is the yearly salary for this role?',
+        name: 'roleSalary'
+      },
+      {
+        type: 'list',
+        message: 'What department is this in? ',
+        choices: departList,
+        name: 'departID'
+      },
+    ]).then((response) => {
+      console.log(response);
+      db.query('INSERT INTO roles (title, department, salary) VALUES (?, ?, ?)', [response.roleName, response.departID, response.roleSalary], (err, result) => {
+        if (err) console.log(err);
+        console.log("Role Result", result);
+      });
+      viewRoles();
+    })
+    });
 
-    }
-  ]);
-  viewRoles();
-  startMenu();
 }
 
 // Function that will take user input and create a new employee with department and roles. 
