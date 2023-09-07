@@ -212,15 +212,73 @@ function addEmployee(){
     });
     viewEmployees();
   }
-
+  
   );
 }
 
-// Change the role of an employee.
-function updateEmployee(){
-  // Show list of employees and their titles. 
-  let employList = [];
-  db.query("SELECT CONCAT(employees.first_name,' ',employees.last_name) as name, employees.id FROM employees;", (err, response) => {
+// Change the role of an employee. Make this an async function to fix anti-pattern use of setTimeout
+// function updateEmployee(){
+//   // create variables to be used
+//   let employList = [];
+//   let roleList = [];
+
+//   // Show list of employees and their titles. 
+//   db.query("SELECT CONCAT(employees.first_name,' ',employees.last_name) as name, employees.id FROM employees;", (err, response) => {
+//     if (err) throw (err);
+//     response.forEach((employee) => {
+//       employList.push({
+//         name: employee.name,
+//         value: employee.id
+//       });
+//     });
+//   });
+  
+//   db.query('SELECT roles.id, roles.title FROM roles;', (err, res) => {
+//     if (err) throw err;
+//     // Store roles from query into an array
+//     res.forEach((role) => {
+//       // Adding name and value in like this makes inquirer show the name but save the value. This works since MySQL is expecting a value but people read things as names.
+//       roleList.push({
+//         name: role.title,
+//         value: role.id,
+//       });
+//     });
+//   });
+
+//   // Need to add the Timeout function since the employList is not filled out in time. Users will not notice the tenth of a second delay. 
+//     inquirer.prompt([
+//     {
+//       type: 'list',
+//       message: 'What employee needs to be updated?',
+//       choices: employList,
+//       name: 'employee'
+//     },
+//     {
+//       type: 'list',
+//       message: 'What the employee\'s new role?',
+//       choices: roleList,
+//       name: 'role'
+//     }
+//   ])
+//   .then((response) => {
+//     console.log('Info from Inquirer', response);
+//     db.query('UPDATE employees SET title = ? WHERE id = ?;', [response.role, response.employee], (err, res) => {
+//       if (err) throw err;
+//       console.log('Employee Changed', res);
+//     });
+//     viewEmployees();
+//   });
+// }
+
+// Refactor function to remove anti-pattern using Promise and async/await. And a lot of Phind. 
+async function updateEmployee() {
+  let employList =[];
+  let roleList =[];
+  
+  // try / catch to attempt to resolve my anti-pattern
+  try {
+    const employResponse = await new Promise((resolve,reject) => {
+      db.query("SELECT CONCAT(employees.first_name,' ',employees.last_name) as name, employees.id FROM employees;", (err, response) => {
     if (err) throw (err);
     response.forEach((employee) => {
       employList.push({
@@ -228,12 +286,14 @@ function updateEmployee(){
         value: employee.id
       });
     });
+    resolve();
+    });
   });
 
-  let roleList = [];
-  db.query('SELECT roles.id, roles.title FROM roles;', (err, res) => {
-    if (err) throw err;
-    // Store roles from query into an array
+  const roleResponse = await new Promise((resolve, reject) => {
+    db.query('SELECT roles.id, roles.title FROM roles;', (err, res) => {
+      if (err) throw err;
+      // Store roles from query into an array
     res.forEach((role) => {
       // Adding name and value in like this makes inquirer show the name but save the value. This works since MySQL is expecting a value but people read things as names.
       roleList.push({
@@ -241,31 +301,35 @@ function updateEmployee(){
         value: role.id,
       });
     });
+    resolve();
+    });
   });
 
-  // Need to add the Timeout function since the employList is not filled out in time. Users will not notice the tenth of a second delay. 
-  setTimeout(() => {
-    inquirer.prompt([
-    {
-      type: 'list',
-      message: 'What employee needs to be updated?',
-      choices: employList,
-      name: 'employee'
-    },
-    {
-      type: 'list',
-      message: 'What the employee\'s new role?',
-      choices: roleList,
-      name: 'role'
-    }
-  ])
-  .then((response) => {
-    console.log('Info from Inquirer', response);
-    db.query('UPDATE employees SET title = ? WHERE id = ?;', [response.role, response.employee], (err, res) => {
-      if (err) throw err;
-      console.log('Employee Changed', res);
-    });
-    viewEmployees();
-  })}, 100);
+  const inquirAns = await inquirer.prompt([
+        {
+          type: 'list',
+          message: 'What employee needs to be updated?',
+          choices: employList,
+          name: 'employee'
+        },
+        {
+          type: 'list',
+          message: 'What the employee\'s new role?',
+          choices: roleList,
+          name: 'role'
+        }
+      ])
+      .then((response) => {
+        console.log('Info from Inquirer', response);
+        db.query('UPDATE employees SET title = ? WHERE id = ?;', [response.role, response.employee], (err, res) => {
+          if (err) throw err;
+          console.log('Employee Changed', res);
+        });
+        viewEmployees();
+      });
+  
+  } catch (err) {
+    console.log('Error: ', err);
+  }
 }
 startMenu();
