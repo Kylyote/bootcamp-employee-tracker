@@ -58,6 +58,7 @@ THEN I am prompted to select an employee to update and their new role and this i
 Link to repo:  
 https://github.com/Kylyote/bootcamp-employee-tracker  
 Link to video:
+https://drive.google.com/file/d/1Uv057NRkbpVUGB4CYIbuYCE6kVvw0Z4T/view
 
 ## Screenshot
 
