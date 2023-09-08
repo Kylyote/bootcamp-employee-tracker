@@ -13,6 +13,28 @@ const db = mysql.createConnection(
 console.log('Connected to employee_db.')
 );
 
+console.log(`
+███████╗███╗   ███╗██████╗ ██╗      ██████╗ ██╗   ██╗███████╗███████╗                       
+██╔════╝████╗ ████║██╔══██╗██║     ██╔═══██╗╚██╗ ██╔╝██╔════╝██╔════╝                       
+█████╗  ██╔████╔██║██████╔╝██║     ██║   ██║ ╚████╔╝ █████╗  █████╗                         
+██╔══╝  ██║╚██╔╝██║██╔═══╝ ██║     ██║   ██║  ╚██╔╝  ██╔══╝  ██╔══╝                         
+███████╗██║ ╚═╝ ██║██║     ███████╗╚██████╔╝   ██║   ███████╗███████╗                       
+╚══════╝╚═╝     ╚═╝╚═╝     ╚══════╝ ╚═════╝    ╚═╝   ╚══════╝╚══════╝                       
+                                                                                            
+███╗   ███╗ █████╗ ███╗   ██╗ █████╗  ██████╗ ███████╗███╗   ███╗███████╗███╗   ██╗████████╗
+████╗ ████║██╔══██╗████╗  ██║██╔══██╗██╔════╝ ██╔════╝████╗ ████║██╔════╝████╗  ██║╚══██╔══╝
+██╔████╔██║███████║██╔██╗ ██║███████║██║  ███╗█████╗  ██╔████╔██║█████╗  ██╔██╗ ██║   ██║   
+██║╚██╔╝██║██╔══██║██║╚██╗██║██╔══██║██║   ██║██╔══╝  ██║╚██╔╝██║██╔══╝  ██║╚██╗██║   ██║   
+██║ ╚═╝ ██║██║  ██║██║ ╚████║██║  ██║╚██████╔╝███████╗██║ ╚═╝ ██║███████╗██║ ╚████║   ██║   
+╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝   
+                                                                                            
+██╗███╗   ██╗████████╗███████╗██████╗ ███████╗ █████╗  ██████╗███████╗                      
+██║████╗  ██║╚══██╔══╝██╔════╝██╔══██╗██╔════╝██╔══██╗██╔════╝██╔════╝                      
+██║██╔██╗ ██║   ██║   █████╗  ██████╔╝█████╗  ███████║██║     █████╗                        
+██║██║╚██╗██║   ██║   ██╔══╝  ██╔══██╗██╔══╝  ██╔══██║██║     ██╔══╝                        
+██║██║ ╚████║   ██║   ███████╗██║  ██║██║     ██║  ██║╚██████╗███████╗                      
+╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝ ╚═════╝╚══════╝`)
+
 // Create menu the user will first see which will lead to a bunch of choices
 function startMenu(){
   inquirer.prompt([
@@ -20,7 +42,7 @@ function startMenu(){
       type: 'list',
       message: 'What would you like to do?',
       name: 'userMC', // user Menu Choice
-      choices: ['View All Departments','View All Roles','View All Employees','Add a Department','Add a Role', 'Add an Employee', 'Update an Employee Role', 'Quit'],
+      choices: ['View All Departments','View All Roles','View All Employees','Add a Department','Add a Role', 'Add an Employee', 'Update an Employee Role', 'Remove Role', 'Quit'],
     }
   ])
   .then((response) => {
@@ -44,6 +66,8 @@ function startMenu(){
     } else if (response.userMC === 'Update an Employee Role') {
       updateEmployee();
 
+    } else if (response.userMC === 'Remove Role') {
+      deleteRole();
     } else {
       // ends connection and returns to terminal screen.
       console.log()
@@ -51,6 +75,25 @@ function startMenu(){
 
     }
   })
+}
+
+// Add menu for updating employees/roles/managers
+function updateMenu() {
+  inquirer.prompt([
+    {
+      type: 'list',
+      message: 'Would you like to update an Employee Role or Employee Manager',
+      choices: ['Employee Role', 'Employee Manager'],
+      name: 'userMC'
+    }
+  ])
+  .then((response) => {
+    if (response.useMC === 'Employee Role'){
+      updateEmployee();
+    } else {
+      updateManager();
+    }
+  });
 }
 
 // View tables functions. These functions will be used to view tables
@@ -63,7 +106,7 @@ function viewDepartment() {
   })
 }
 function viewRoles() {
-  db.query('SELECT * FROM roles', function(err, results) { 
+  db.query('SELECT roles.id, roles.title, departments.department_name, roles.salary FROM roles JOIN departments ON roles.department = departments.id', function(err, results) { 
     if (err) console.log(err);
     console.table(results);
     startMenu();
@@ -71,7 +114,7 @@ function viewRoles() {
   })
 }
 function viewEmployees() {
-  db.query("SELECT employees.id, employees.first_name AS 'First Name', employees.last_name AS 'Last Name', roles.title AS 'Job Title', departments.department_name AS Department, roles.salary AS Salary, CONCAT(manager.first_name, ' ', manager.last_name) AS Manager FROM employees JOIN roles ON employees.title = roles.id JOIN departments ON roles.department = departments.id LEFT JOIN employees AS manager ON employees.manager = manager.id;", function(err, results) { 
+  db.query("SELECT employees.id AS ID, employees.first_name AS 'First Name', employees.last_name AS 'Last Name', roles.title AS 'Job Title', departments.department_name AS Department, roles.salary AS Salary, CONCAT(manager.first_name, ' ', manager.last_name) AS Manager FROM employees JOIN roles ON employees.title = roles.id JOIN departments ON roles.department = departments.id LEFT JOIN employees AS manager ON employees.manager = manager.id;", function(err, results) { 
     if (err) console.log(err);
     console.table(results);
     startMenu();
@@ -89,12 +132,12 @@ function addDepart() {
     }
   ])
   .then((response) => {
-    db.query('INSERT INTO departments VALUES ?;', response.departName, (err, result) => {
+    db.query('INSERT INTO departments(department_name) VALUES (?);', response.departName, (err, result) => {
       if(err) console.log(err); 
       console.log('Department Result', result);
     });
+    viewDepartment();
   });
-  viewDepartment();
 }
 
 // Function that will take user input and add a new role to the roles table, then it will call viewRoles() to show the changes, then go back to the startMenu().
@@ -320,7 +363,6 @@ async function updateEmployee() {
         }
       ])
       .then((response) => {
-        console.log('Info from Inquirer', response);
         db.query('UPDATE employees SET title = ? WHERE id = ?;', [response.role, response.employee], (err, res) => {
           if (err) throw err;
           console.log('Employee Changed', res);
@@ -331,5 +373,72 @@ async function updateEmployee() {
   } catch (err) {
     console.log('Error: ', err);
   }
+}
+
+async function updateManager() {
+  let employList = [];
+  let managerList = [];
+
+  try {
+    const employResponse = await new Promise((resolve,reject) => {
+      db.query("SELECT CONCAT(employees.first_name,' ',employees.last_name) as name, employees.id FROM employees;", (err, response) => {
+    if (err) throw (err);
+    response.forEach((employee) => {
+      employList.push({
+        name: employee.name,
+        value: employee.id
+      });
+    });
+    resolve();
+    });
+  });
+
+
+  } catch(err) {
+    console.log('Error: ', err);
+  }
+}
+
+async function deleteRole(){
+  let roleList = [];
+  try {
+    const roleResponse = await new Promise((resolve, reject) => {
+      db.query('SELECT roles.id, roles.title FROM roles;', (err, res) => {
+        if (err) throw err;
+        // Store roles from query into an array
+      res.forEach((role) => {
+        // Adding name and value in like this makes inquirer show the name but save the value. This works since MySQL is expecting a value but people read things as names.
+        roleList.push({
+          name: role.title,
+          value: role.id,
+        });
+      });
+      resolve();
+      });
+    });
+
+    const inquirAns = await inquirer.prompt([
+      {
+        type: 'list',
+        message: 'Which role would you like to remove?',
+        choices: roleList,
+        name: 'role'
+      }
+    ])
+    .then((response) => {
+      db.query('DELETE FROM roles WHERE id=?;', [response.role], (err, res) => {
+        if (err) throw err;
+        console.log('Role Deleted', res);
+      });
+      viewEmployees();
+    });
+
+  } catch(err) {
+    console.log("Error: ", err);
+  }
+}
+
+async deleteDepart() {
+  
 }
 startMenu();
