@@ -42,7 +42,7 @@ function startMenu(){
       type: 'list',
       message: 'What would you like to do?',
       name: 'userMC', // user Menu Choice
-      choices: ['View All Departments','View All Roles','View All Employees','Add a Department','Add a Role', 'Add an Employee', 'Update an Employee Role', 'Remove Role', 'Quit'],
+      choices: ['View All Departments','View All Roles','View All Employees','Add a Department','Add a Role', 'Add an Employee', 'Update an Employee Role','Remove Department', 'Remove Role','Remove Employee', 'Quit'],
     }
   ])
   .then((response) => {
@@ -66,8 +66,15 @@ function startMenu(){
     } else if (response.userMC === 'Update an Employee Role') {
       updateEmployee();
 
+    } else if (response.userMC === 'Remove Department') {
+      deleteDepart();
+
     } else if (response.userMC === 'Remove Role') {
       deleteRole();
+
+    } else if (response.userMC === 'Remove Employee') {
+      deleteEmploy();
+
     } else {
       // ends connection and returns to terminal screen.
       console.log()
@@ -77,26 +84,26 @@ function startMenu(){
   })
 }
 
-// Add menu for updating employees/roles/managers
-function updateMenu() {
-  inquirer.prompt([
-    {
-      type: 'list',
-      message: 'Would you like to update an Employee Role or Employee Manager',
-      choices: ['Employee Role', 'Employee Manager'],
-      name: 'userMC'
-    }
-  ])
-  .then((response) => {
-    if (response.useMC === 'Employee Role'){
-      updateEmployee();
-    } else {
-      updateManager();
-    }
-  });
-}
+// Add menu for updating employees/roles/managers at a later date
+// function updateMenu() {
+//   inquirer.prompt([
+//     {
+//       type: 'list',
+//       message: 'Would you like to update an Employee Role or Employee Manager',
+//       choices: ['Employee Role', 'Employee Manager'],
+//       name: 'userMC'
+//     }
+//   ])
+//   .then((response) => {
+//     if (response.useMC === 'Employee Role'){
+//       updateEmployee();
+//     } else {
+//       updateManager();
+//     }
+//   });
+// }
 
-// View tables functions. These functions will be used to view tables
+// View tables functions. These functions will be used to view tables and will be called after functions that change parts of the database. 
 function viewDepartment() {
   db.query('SELECT * FROM departments', function(err, results) { 
     if (err) console.log(err);
@@ -134,7 +141,7 @@ function addDepart() {
   .then((response) => {
     db.query('INSERT INTO departments(department_name) VALUES (?);', response.departName, (err, result) => {
       if(err) console.log(err); 
-      console.log('Department Result', result);
+      // console.log('Department Result', result);
     });
     viewDepartment();
   });
@@ -154,8 +161,8 @@ function addRole (){
       });
     });
   });
-  // Ask the user some questions. departList is added in so that the proper list of departments is shown. 
-  departList.push('New Department');
+  // Ask the user some questions. departList is added in so that the proper list of departments is shown. New Department will be add functionality for the user to add a new department before finishing a new job title.
+  // departList.push('New Department');
   inquirer.prompt([
     {
       type: 'input',
@@ -175,16 +182,20 @@ function addRole (){
     }
   ])
   .then((response) => {
-    console.log(response);
-    db.query('INSERT INTO roles (title, department, salary) VALUES (?, ?, ?);', [response.roleName, response.departID, response.roleSalary], (err, result) => {
+    // This is the same as using the arrays but passes in objects instead. With the object properties matching up with the SQL column titles. Shown by Nedda.
+    db.query('INSERT INTO roles SET ?;', {
+      title:response.roleName, 
+      department:response.departID, 
+      salary:response.roleSalary}, (err, result) => {
+    //db.query('INSERT INTO roles (title, department, salary) VALUES (?, ?, ?);', [response.roleName, response.departID, response.roleSalary], (err, result) => {
       if (err) console.log(err);
-      console.log("Role Result", result);
+      // console.log("Role Result", result);
     });
     viewRoles();
   })
 }
 
-// Function that will take user input and create a new employee with department and roles. 
+// Function that will take user input and create a new employee with department and roles. This should be refactered with async/await. It only works because people type slow compared to computers.
 function addEmployee(){
   // Make array with names and values for the new employee department.
   let departList = [];
@@ -223,7 +234,7 @@ function addEmployee(){
       });
     });
   });
-  console.log(departList);
+
   inquirer.prompt([
     {
       type:'input',
@@ -251,7 +262,7 @@ function addEmployee(){
   .then((response) => {
     db.query('INSERT INTO employees (first_name, last_name, title, manager) VALUES (?, ?, ?, ?);',[response.fName, response.lName, response.employRole, response.employMan], (err, result) => {
       if (err) console.log(err);
-      console.log('Employee Result', result);
+      //console.log('Employee Result', result);
     });
     viewEmployees();
   }
@@ -259,7 +270,7 @@ function addEmployee(){
   );
 }
 
-// Change the role of an employee. Make this an async function to fix anti-pattern use of setTimeout
+// Change the role of an employee. Make this an async function to fix anti-pattern use of setTimeout.
 // function updateEmployee(){
 //   // create variables to be used
 //   let employList = [];
@@ -347,7 +358,7 @@ async function updateEmployee() {
     resolve();
     });
   });
-
+  // The await makes sure this waits for employList and roleList to the filled with the required data.
   const inquirAns = await inquirer.prompt([
         {
           type: 'list',
@@ -375,6 +386,7 @@ async function updateEmployee() {
   }
 }
 
+// This will have to be visited and finished at a later date. 
 async function updateManager() {
   let employList = [];
   let managerList = [];
@@ -396,6 +408,45 @@ async function updateManager() {
 
   } catch(err) {
     console.log('Error: ', err);
+  }
+}
+// Below is the list of delete functions. These could possibly be shortened by rolling all the repeated code into their own functions. DNRY Add functionality to quit out if user notices nothing needs to be removed.
+
+async function deleteDepart() {
+  try {
+    let departList = [];
+    const departResponse = await new Promise((resolve, reject) => {
+      db.query('SELECT * FROM departments;', (err, res) => {
+        if (err) reject(err);
+        // Store departments from query into an array
+        res.forEach((department) => {
+          departList.push({
+            name: department.department_name,
+            value: department.id,
+          });
+        });
+        resolve();
+      });
+    });
+    
+    const inquirAns = await inquirer.prompt([
+      {
+        type: 'list',
+        message: 'Which department would you like to remove?',
+        choices: departList,
+        name: 'role'
+      }
+    ])
+    .then((response) => {
+      db.query('DELETE FROM departments WHERE id=?;', [response.role], (err, res) => {
+        if (err) throw err;
+        console.log('Department Deleted', res);
+      });
+      viewDepartment();
+    });
+    
+  } catch (err) {
+    console.log("Error: ", err);
   }
 }
 
@@ -430,7 +481,7 @@ async function deleteRole(){
         if (err) throw err;
         console.log('Role Deleted', res);
       });
-      viewEmployees();
+      viewRoles();
     });
 
   } catch(err) {
@@ -438,7 +489,41 @@ async function deleteRole(){
   }
 }
 
-async deleteDepart() {
+async function deleteEmploy() {
+  let employList =[];
   
+  try {
+    const employResponse = await new Promise((resolve,reject) => {
+      db.query("SELECT CONCAT(employees.first_name,' ',employees.last_name) as name, employees.id FROM employees;", (err, response) => {
+        if (err) throw (err);
+        response.forEach((employee) => {
+          employList.push({
+            name: employee.name,
+            value: employee.id
+          });
+        });
+        resolve();
+      });
+    });
+    
+    const inquirAns = await inquirer.prompt([
+      {
+        type: 'list',
+        message: 'Which role would you like to remove?',
+        choices: employList,
+        name: 'employ'
+      }
+  ])
+  .then((response) => {
+    db.query('DELETE FROM employees WHERE id=?;', [response.employ], (err, res) => {
+      if (err) throw err;
+      console.log('Employee Deleted', res);
+    });
+    viewEmployees();
+  });
+  } catch (err) {
+    console.log("Error: ", err);
+  }
 }
+
 startMenu();
