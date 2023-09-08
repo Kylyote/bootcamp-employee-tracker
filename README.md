@@ -55,6 +55,10 @@ THEN I am prompted to select an employee to update and their new role and this i
 
 ## Links
 
+Link to repo:  
+https://github.com/Kylyote/bootcamp-employee-tracker  
+Link to video:
+
 ## Screenshot
 
 ![Alt text](assets/pics/ScreenShot.png)
